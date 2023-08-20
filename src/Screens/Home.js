@@ -1,22 +1,40 @@
-import React from "react";
-import { View, Text, StyleSheet, Button, TouchableOpacity } from "react-native";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
-import { AntDesign } from "@expo/vector-icons";
-import { Feather } from "@expo/vector-icons";
+import { AntDesign, Feather, Ionicons } from "@expo/vector-icons";
 import ProfileScreen from "./ProfileScreen";
 import PostsScreen from "./PostsScreen";
 import CreatePostsScreen from "./CreatePostsScreen";
+import { FIRBASE_AUTH } from "../../config";
+import { useDispatch } from "react-redux";
+import { logOut } from "../redux/auth/authSlice";
+import { logOutStore } from "../redux/storage/storageSlice"
 
 const Tabs = createBottomTabNavigator();
 
 const Home = ({ navigation }) => {
+  const dispatch = useDispatch();
+  const auth = FIRBASE_AUTH;
+
+  const exit = () => {
+    Alert.alert('Do you want to LogOut?', "",  [
+      {
+        text: 'Cancel',
+        onPress: () => console.log('Cancel Pressed'),
+        style: 'cancel',
+      },
+      {text: 'OK', onPress: () => {
+        auth.signOut();
+        dispatch(logOut());
+        dispatch(logOutStore())
+      }},
+    ]);
+  }
+
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-
           if (route.name === "Profile") {
             return <Feather name="user" size={size} color={color} />;
           } else if (route.name === "Posts") {
@@ -42,12 +60,15 @@ const Home = ({ navigation }) => {
       <Tabs.Screen
         name="Posts"
         component={PostsScreen}
+        detachInactiveScreens={false}
         options={{
 					title: "Публікації",
           headerShown: true,
 					headerTitleAlign: "center",
           headerRight: () => (
-              <Feather name="log-out" size={24} color="#BDBDBD" />
+            <TouchableOpacity onPress={exit}>
+                <Feather name="log-out" size={24} color="#BDBDBD" />
+            </TouchableOpacity>
           ),
         }}
       />

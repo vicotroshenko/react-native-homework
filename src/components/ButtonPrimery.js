@@ -1,21 +1,24 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, Pressable, View } from "react-native";
 
-const ButtonPrimery =({text, onText}) => {
+const ButtonPrimery =({text, onText, disable=false}) => {
 	return (
-		<TouchableOpacity style={styles.submitBtn}>
+		<Pressable 
+      style={disable ? 
+        [styles.primeryBtn, styles.disabledColorBtn]
+         : [styles.primeryBtn, styles.activeColorBtn]} 
+      onPress={onText} disabled={disable}>
 		<View>
-			<Text style={styles.submitBtnText} onPress={onText}>
+			<Text style={disable ? styles.submitBtnTextDisabled : styles.submitBtnTextActive} >
 				{text}
 			</Text>
 		</View>
-	</TouchableOpacity>
+	</Pressable>
 	)
 }
 
 const styles = StyleSheet.create({
-	submitBtn: {
-    backgroundColor: "#FF6C00",
-    color: "white",
+	primeryBtn: {
+    width: "100%",
     paddingTop: 16,
     paddingBottom: 16,
     paddingLeft: 32,
@@ -24,8 +27,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     fontFamily: "Roboto",
   },
-	submitBtnText: {
+  activeColorBtn: {
+    backgroundColor: "#FF6C00",
+  },
+  disabledColorBtn: {
+    backgroundColor: "#F6F6F6",
+  },
+	submitBtnTextActive: {
     color: "white",
+  },
+  submitBtnTextDisabled: {
+    color: "#BDBDBD",
   },
 })
 

@@ -8,14 +8,17 @@ import {
   TouchableOpacity,
   Pressable,
   KeyboardAvoidingView,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
-  ImageBackground,
+  ImageBackground
 } from "react-native";
 import Add from "../images/add.png";
 import ButtonPrimery from "../components/ButtonPrimery";
 import PhotoBg from "../images/PhotoBg.jpg";
+import { useDispatch, useSelector } from "react-redux";
+import { writeDataToFirestore } from "../redux/storage/operations";
+import { registerDB } from "../redux/auth/operation";
+import { Loader } from "../components/Loader"
 
 const RegistrationScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -24,6 +27,9 @@ const RegistrationScreen = ({ navigation }) => {
   const [passwordVisibility, setPasswordVisibility] = useState(true);
   const [rightIcon, setRightIcon] = useState("eye");
 
+  const dispatch = useDispatch();
+  const isLoading = useSelector(state => state.auth.isLoading)
+  
   const handlePasswordVisibility = () => {
     if (rightIcon === "eye") {
       setRightIcon("eye-off");
@@ -34,12 +40,10 @@ const RegistrationScreen = ({ navigation }) => {
     }
   };
 
-  const onRegistration = () => {
-    setEmail("");
-    setLogin("");
-    setPassword("");
-    navigation.navigate("Home");
-  };
+  const handelSumbit = () => {
+    dispatch(registerDB(email, password, login));
+    dispatch(writeDataToFirestore(login, email));
+  }
 
   return (
     <ImageBackground
@@ -47,6 +51,7 @@ const RegistrationScreen = ({ navigation }) => {
       style={{ width: "100%", height: "100%", justifyContent: "flex-end" }}
       imageStyle={{ flex: 1 }}
     >
+      {isLoading ? <Loader/> : <></>}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.registrationContainer}>
           <KeyboardAvoidingView
@@ -92,7 +97,7 @@ const RegistrationScreen = ({ navigation }) => {
                   <Text style={styles.showPasswordText}>Показати</Text>
                 </Pressable>
               </View>
-              <ButtonPrimery text={"Зареєструватися"} onText={onRegistration} />
+              <ButtonPrimery text={"Зареєструватися"} onText={handelSumbit} />
               <View>
                 <Text
                   style={styles.linkText}

@@ -5,20 +5,28 @@ import {
   TextInput,
   View,
   Pressable,
-  Alert,
   KeyboardAvoidingView,
   TouchableWithoutFeedback,
   Keyboard,
-  ImageBackground,
+  ImageBackground
 } from "react-native";
 import ButtonPrimery from "../components/ButtonPrimery";
 import PhotoBg from "../images/PhotoBg.jpg";
+import { useDispatch, useSelector } from "react-redux";
+import { loginDB } from "../redux/auth/operation";
+import { Loader } from "../components/Loader";
+
+
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisibility, setPasswordVisibility] = useState(true);
   const [rightIcon, setRightIcon] = useState("eye");
+  
+  const dispatch = useDispatch();
+  const isLoading = useSelector(state => state.auth.isLoading)
+  
 
   const handlePasswordVisibility = () => {
     if (rightIcon === "eye") {
@@ -31,10 +39,9 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const onLogin = () => {
-    setEmail("");
-    setPassword("");
-    navigation.navigate("Home")
+    dispatch(loginDB(email, password));
   };
+
 
   return (
     <ImageBackground
@@ -42,6 +49,7 @@ const LoginScreen = ({ navigation }) => {
       style={{ width: "100%", height: "100%", justifyContent: "flex-end" }}
       imageStyle={{ flex: 1 }}
     >
+      {isLoading ? <Loader/> : <></>}
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.registrationContainer}>
           <KeyboardAvoidingView

@@ -19,7 +19,7 @@ const styles = StyleSheet.create({
 	commentContainer:{
 		width: "100%",
 		flexDirection: "row",
-		columnGap: 16,
+		justifyContent: "space-between",
 	},
 	userLogo: {
 		width: 28,
@@ -33,9 +33,10 @@ const styles = StyleSheet.create({
 		height: "100%",
 	},
 	comment: {
-		maxWidth: 299,
+		width: "80%",
 		backgroundColor: "rgba(0, 0, 0, 0.03)",
 		padding: 16,
+		borderRadius: 6,
 	},
 	commentText:{
 		fontSize: 13,

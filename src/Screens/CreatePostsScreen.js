@@ -1,71 +1,147 @@
+import TrashIcon from "../images/trash.png";
+import MapIcon from "../images/mapPin.png";
 import {
-  Button,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   ScrollView,
+  Alert,
 } from "react-native";
-import CameraIcon from "../images/camera-white.png";
-import TrashIcon from "../images/trash.png";
-import MapIcon from "../images/mapPin.png";
-import ImageForest from "../images/image-1.jpg";
+import uuid from "react-native-uuid";
 import { TextInput } from "react-native-gesture-handler";
 import ButtonPrimery from "../components/ButtonPrimery";
-import ButtonSecondary from "../components/ButtonSecondary";
-import { useState } from "react";
-import ImageContainer from "../components/ImageContainer";
+import { useState, useEffect } from "react";
+import * as MediaLibrary from "expo-media-library";
+import * as Location from "expo-location";
+import { useDispatch, useSelector } from "react-redux";
+import { updateDataInFirestore } from "../redux/storage/operations";
+import CameraHome from "../components/CameraHome";
+import { useIsFocused } from "@react-navigation/native";
 
-const CreatePostsScreen = () => {
+
+const CreatePostsScreen = ({ navigation }) => {
   const [name, setName] = useState("");
+  const [adress, setAdress] = useState("");
   const [location, setLocation] = useState("");
+  const [photo, setPhoto] = useState(null);
 
+  const isFocused = useIsFocused();
+  
+
+  const user = useSelector((state) => state.auth.user);
+  const { loadId } = useSelector((state) => state.storage);
+
+  const dispatch = useDispatch();
+
+
+  useEffect(() => {
+   
+      (async () => {
+        
+        let location = await Location.getCurrentPositionAsync({});
+        const [{ city, country, subregion }] = await Location.reverseGeocodeAsync(
+          location.coords
+        );
+        const loc = `${city}, ${subregion}, ${country}`;
+        setLocation(loc);
+      })();
+    
+
+  }, [isFocused]);
+
+  const handlePhoto = (uriPhoto) => {
+    setPhoto(uriPhoto);
+  };
+
+  const savePhoto = async () => {
+    try {
+      await MediaLibrary.createAssetAsync(photo);
+      Alert.alert("Picture saved in the library!");
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const createPost = () => {
+    if (photo.length === 0 || photo === null) return;
+    const postInfo = {
+      id: uuid.v4(),
+      photo,
+      name,
+      adress,
+      location,
+      comments: [],
+    };
+    dispatch(updateDataInFirestore(user.login, loadId, postInfo));
+    navigation.navigate("Posts");
+    setName("");
+    setAdress("");
+    setPhoto(null);
+  };
+
+  const deletePic = () => {
+    setPhoto(null);
+    setName("");
+    setAdress("");
+  };
+
+  const showLocation = () => {
+    navigation.navigate("Map", { adress });
+  };
   return (
-   <View style={styles.container}>
-     <ScrollView
-      style={styles.scrollContainer}
-      contentContainerStyle={styles.box}
-    >
-      <ImageContainer photo={ImageForest}>
-        <View style={styles.btnContainer}>
-          <ButtonSecondary stylesBtn={btnAddPhotoStyles}>
-            <Image source={CameraIcon} />
-          </ButtonSecondary>
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scrollContainer}
+        contentContainerStyle={styles.box}
+      >
+        <View style={styles.photoContainer}>
+          {photo ? (
+            <Image
+              source={{ uri: photo }}
+              style={{ width: "100%", height: "100%" }}
+            />
+          ) : (
+            <CameraHome getPhoto={handlePhoto} />
+          )}
         </View>
-      </ImageContainer>
-      <ButtonSecondary stylesBtn={btnEditPhotoStyles}>
-        <Text style={styles.editPhotoText}>Завантажте фото</Text>
-      </ButtonSecondary>
-      <View style={styles.labelInputName}>
-        <TextInput
-          placeholder="Назва..."
-          style={styles.inputName}
-          value={name}
-          onChangeText={(text) => setName(text)}
+        <Text style={styles.editPhotoText} onPress={savePhoto}>
+          Завантажте фото
+        </Text>
+        <View style={styles.labelInputName}>
+          <TextInput
+            placeholder="Назва..."
+            style={styles.inputName}
+            value={name}
+            onChangeText={(text) => setName(text)}
+          />
+        </View>
+        <View style={styles.labelInputLocation}>
+          <TouchableOpacity
+            onPress={showLocation}
+            style={styles.inputLocationIcon}
+          >
+            <Image source={MapIcon} />
+          </TouchableOpacity>
+          <TextInput
+            placeholder="Місцевість..."
+            style={styles.inputLocation}
+            value={adress}
+            onChangeText={(text) => setAdress(text)}
+          />
+        </View>
+
+        <ButtonPrimery
+          text={"Опублікувати"}
+          onText={createPost}
+          disable={photo ? false : true}
         />
-      </View>
-      <View style={styles.labelInputLocation}>
-        <Image source={MapIcon} style={styles.inputLocationIcon} />
-        <TextInput
-          placeholder="Місцевість..."
-          style={styles.inputLocation}
-          value={location}
-          onChangeText={(text) => setLocation(text)}
-        />
-      </View>
-      <View style={styles.btnDelete}>
-      <ButtonPrimery text={"Опублікувати"} />
-
-
-
-
-        <ButtonSecondary stylesBtn={btnDeleteStyles}>
+        <TouchableOpacity style={styles.btnDeleteStyles} onPress={deletePic}>
           <Image source={TrashIcon} />
-        </ButtonSecondary>
-      </View>
-    </ScrollView>
-   </View>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -74,17 +150,24 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   scrollContainer: {
-    height: "20%",
+    height: "100%",
   },
-  box:{
-    minHeight: "100%",
+  box: {
+    alignItems: "center",
+    height: "160%",
+    paddingTop: 32,
+    marginBottom: 22,
   },
-  btnContainer: {
-    position: "absolute",
-    verticalAlign: "center",
-    align: "center",
-    zIndex: 3,
+  photoContainer: {
+    height: "50%",
+    width: "100%",
+    position: "relative",
+    backgroundColor: "#F6F6F6",
+    borderRadius: 8,
+    border: "1px solid #E8E8E8",
+    overflow: "hidden",
   },
+
   labelInputName: {
     width: "100%",
     marginTop: 32,
@@ -115,21 +198,12 @@ const styles = StyleSheet.create({
     left: 0,
     width: 24,
     height: 24,
+    zIndex: 3,
   },
   editPhotoText: {
     color: "#BDBDBD",
   },
-  btnBox: {
-    height: 211,
-    justifyContent: "space-between",
-    width: "100%",
-    backgroundColor: "yellow"
-
-  }
-});
-
-const btnDeleteStyles = {
-  button: {
+  btnDeleteStyles: {
     width: 70,
     height: 40,
     borderRadius: 20,
@@ -137,25 +211,11 @@ const btnDeleteStyles = {
     alignItems: "center",
     alignSelf: "center",
     justifyContent: "center",
-    marginTop: 20,
+    marginTop: 120,
   },
-};
-
-const btnEditPhotoStyles = {
-  button: {
+  btnEditPhotoStyles: {
     backgroundColor: "transparent",
   },
-};
-
-const btnAddPhotoStyles = {
-  button: {
-    width: 60,
-    height: 60,
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
-    borderRadius: 100,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-};
+});
 
 export default CreatePostsScreen;
